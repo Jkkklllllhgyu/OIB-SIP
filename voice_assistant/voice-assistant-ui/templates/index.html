@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Voice</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="stage" onclick="startListening()">
+    <div class="voice-dot" id="dot"></div>
+
+    <p class="status" id="status">Tap to speak</p>
+
+    <p class="user" id="userText"></p>
+    <p class="assistant" id="assistantText"></p>
+</div>
+
+<script>
+function startListening() {
+    const status = document.getElementById("status");
+    const dot = document.getElementById("dot");
+
+    status.innerText = "Listening…";
+    dot.classList.add("active");
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = "en-US";
+
+    recognition.onresult = function(event) {
+        const speech = event.results[0][0].transcript;
+        document.getElementById("userText").innerText = speech;
+
+        fetch("/process", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({command: speech})
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("assistantText").innerText = data.reply;
+            speechSynthesis.speak(new SpeechSynthesisUtterance(data.reply));
+
+            status.innerText = "Tap to speak";
+            dot.classList.remove("active");
+        });
+    };
+
+    recognition.start();
+}
+</script>
+
+</body>
+</html>
